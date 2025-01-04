@@ -118,7 +118,7 @@ pub fn draw_image(input: &str, font_info: Fonts) -> anyhow::Result<ImageBuffer<R
     let max_width = text.lines().map(|line| line.len()).max().unwrap_or(0);
     let glyph = font.glyph_id('m');
     let char_width = scaled_font.h_advance(glyph);
-    let width = (max_width - 1) as f32 * char_width;
+    let width = max_width as f32 * char_width;
     let height = text.lines().count() as f32 * line_height;
 
     let mut image = RgbaImage::new(width.ceil() as u32, height.ceil() as u32);
