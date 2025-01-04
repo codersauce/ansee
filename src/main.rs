@@ -1,8 +1,7 @@
-mod colors;
-
 use std::io::{self, Read};
 
 use ab_glyph::{FontRef, PxScale};
+use ansee::colors;
 use ansi_parser::{AnsiParser, AnsiSequence, Output};
 use colors::{ANSI_MAP, MAP256};
 use image::{Rgba, RgbaImage};
@@ -93,11 +92,12 @@ fn extract_text(commands: &[Command]) -> String {
         .collect()
 }
 
-fn draw_image(commands: &[Command]) -> anyhow::Result<()> {
-    let text = extract_text(commands);
+fn draw_image(input: &str) -> anyhow::Result<()> {
+    let commands = parse_ansi(input);
+    let text = extract_text(&commands);
     let font_data = include_bytes!("../FantasqueSansMNerdFontMono-Regular.ttf");
     let font = FontRef::try_from_slice(font_data)?;
-    let font_size = 16.0;
+    let font_size = 20.0;
     let scale = PxScale::from(font_size);
     let line_height = font_size * 1.1;
     let max_width = text.lines().map(|line| line.len()).max().unwrap_or(0);
@@ -113,8 +113,8 @@ fn draw_image(commands: &[Command]) -> anyhow::Result<()> {
 
     for command in commands {
         match command {
-            Command::SetForegroundColor(color) => fg_color = *color,
-            Command::SetBackgroundColor(color) => bg_color = *color,
+            Command::SetForegroundColor(color) => fg_color = color,
+            Command::SetBackgroundColor(color) => bg_color = color,
             Command::Text(s) => {
                 for c in s.chars() {
                     if c == '\n' {
@@ -153,17 +153,16 @@ fn draw_image(commands: &[Command]) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn main() -> anyhow::Result<()> {
-    let text = read_stdin()?;
-
+fn parse_ansi(text: &str) -> Vec<Command> {
     let mut commands = vec![];
     for item in text.ansi_parse() {
         match item {
             Output::TextBlock(s) => commands.push(Command::Text(s.to_string())),
             Output::Escape(ansi_sequence) => match ansi_sequence {
-                AnsiSequence::SetGraphicsMode(mode) => match handle_graphics_mode(&mode)? {
-                    Some(cmd) => commands.push(cmd),
-                    None => println!("Skipped graphics mode: {:?}", mode),
+                AnsiSequence::SetGraphicsMode(mode) => match handle_graphics_mode(&mode) {
+                    Ok(Some(cmd)) => commands.push(cmd),
+                    Ok(None) => println!("Skipped graphics mode: {:?}", mode),
+                    Err(e) => println!("Error: {:?}", e),
                 },
                 _ => {
                     println!("Escape: {:?}", ansi_sequence);
@@ -172,7 +171,12 @@ fn main() -> anyhow::Result<()> {
         }
     }
 
-    draw_image(&commands)?;
+    commands
+}
+
+fn main() -> anyhow::Result<()> {
+    let text = read_stdin()?;
+    draw_image(&text)?;
 
     Ok(())
 }
