@@ -3,15 +3,15 @@ pub mod colors;
 
 use std::path::PathBuf;
 
-use ab_glyph::{FontRef, PxScale};
+use ab_glyph::{Font, FontRef, PxScale, ScaleFont};
 use ansi_parser::{AnsiParser, AnsiSequence, Output};
 use colors::{ANSI_MAP, MAP256};
+use font_kit::{family_name::FamilyName, handle::Handle, source::SystemSource};
 use image::{ImageBuffer, Rgba, RgbaImage};
 use imageproc::{
     drawing::{draw_filled_rect_mut, draw_text_mut},
     rect::Rect,
 };
-use unicode_width::UnicodeWidthChar;
 
 #[derive(Debug)]
 enum Command {
@@ -85,25 +85,40 @@ fn extract_text(commands: &[Command]) -> String {
         .collect()
 }
 
+#[derive(Debug)]
 pub struct Fonts {
     pub main: Option<PathBuf>,
-    pub italic: Option<PathBuf>,
-    pub bold: Option<PathBuf>,
-    pub bold_italic: Option<PathBuf>,
     pub size: f32,
     pub line_height: f32,
 }
 
-pub fn draw_image(input: &str, fonts: Fonts) -> anyhow::Result<ImageBuffer<Rgba<u8>, Vec<u8>>> {
+pub fn draw_image(input: &str, font_info: Fonts) -> anyhow::Result<ImageBuffer<Rgba<u8>, Vec<u8>>> {
     let commands = parse_ansi(input);
     let text = extract_text(&commands);
-    let font_data = include_bytes!("../FantasqueSansMNerdFontMono-Regular.ttf");
-    let font = FontRef::try_from_slice(font_data)?;
-    let font_size = 20.0;
+
+    let source = SystemSource::new();
+    let handle = match font_info.main {
+        Some(main) => source.select_best_match(
+            &[FamilyName::Title(main.to_string_lossy().to_string())],
+            &Default::default(),
+        )?,
+        None => source.select_best_match(&[FamilyName::Monospace], &Default::default())?,
+    };
+    let font_data = match handle {
+        Handle::Path { path, .. } => std::fs::read(path)?,
+        Handle::Memory { bytes, .. } => bytes.to_vec(),
+    };
+    let font = FontRef::try_from_slice(&font_data)?;
+    let font_size = font_info.size;
+
     let scale = PxScale::from(font_size);
-    let line_height = font_size * 1.1;
+    let scaled_font = font.as_scaled(scale);
+
+    let line_height = font_size * font_info.line_height;
     let max_width = text.lines().map(|line| line.len()).max().unwrap_or(0);
-    let width = max_width as f32 * font_size / 2.0;
+    let glyph = font.glyph_id('m');
+    let char_width = scaled_font.h_advance(glyph);
+    let width = (max_width - 1) as f32 * char_width;
     let height = text.lines().count() as f32 * line_height;
 
     let mut image = RgbaImage::new(width.ceil() as u32, height.ceil() as u32);
@@ -125,8 +140,9 @@ pub fn draw_image(input: &str, fonts: Fonts) -> anyhow::Result<ImageBuffer<Rgba<
                         continue;
                     }
 
-                    let char_width =
-                        UnicodeWidthChar::width(c).unwrap_or(0) as f32 * font_size / 2.0;
+                    let glyph = font.glyph_id(c);
+                    let char_width = scaled_font.h_advance(glyph);
+
                     let rect = Rect::at(cx.round() as i32, cy.round() as i32)
                         .of_size(char_width.ceil() as u32, line_height.ceil() as u32);
                     draw_filled_rect_mut(&mut image, rect, bg_color);
