@@ -2,6 +2,13 @@
 name = "ansee"
 version = "0.1.0"
 edition = "2021"
+authors = ["Felipe Coury <felipe.coury@gmail.com"]
+license = "MIT"
+description = "ANSI escaped text to image CLI tool and Rust library"
+repository = "https://github.com/codersauce/ansee"
+keywords = ["ansi", "image", "ansi2image", "text2image", "cli", "tool", "library"]
+categories = ["command-line-utilities", "graphics", "rendering", "text-processing"]
+readme = "README.md"
 
 [dependencies]
 ab_glyph = "0.2.29"
