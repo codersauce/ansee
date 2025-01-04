@@ -1,10 +1,14 @@
 use std::path::PathBuf;
 
-use clap::Parser;
+use clap::{Parser, Subcommand};
 
-#[derive(Debug, Parser)]
-/// Render text as an image
-pub struct Args {
+/// Render ANSI escaped text to image
+#[derive(Parser)]
+#[command(args_conflicts_with_subcommands = true)]
+pub struct Cli {
+    #[clap(subcommand)]
+    pub command: Option<Commands>,
+
     /// Input file to render or stdin if not present
     pub input: Option<PathBuf>,
 
@@ -16,23 +20,17 @@ pub struct Args {
     #[clap(short = 'f', long)]
     pub font: Option<PathBuf>,
 
-    /// Font used for rendering italic text, fallsback to font
-    #[clap(short = 'i', long)]
-    pub font_italic: Option<PathBuf>,
-
-    /// Font used for rendering bold text, fallsback to font
-    #[clap(short = 'b', long)]
-    pub font_bold: Option<PathBuf>,
-
-    /// Font used for rendering bold italic text, fallsback to font
-    #[clap(short = 'x', long)]
-    pub font_bold_italic: Option<PathBuf>,
-
-    /// Font size in pixels
+    /// Font size in pixels, defaults to 20.0
     #[clap(short = 's', long)]
     pub font_size: Option<f32>,
 
     /// Line height in a factor of height, defaults to 1.1
     #[clap(short = 'e', long)]
     pub line_height: Option<f32>,
+}
+
+#[derive(Subcommand)]
+pub enum Commands {
+    /// List of font families that can be used
+    ListFonts,
 }
