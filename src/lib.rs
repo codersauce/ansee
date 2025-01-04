@@ -1,9 +1,7 @@
 pub mod cli;
 pub mod colors;
 
-use std::path::PathBuf;
-
-use ab_glyph::{Font, FontRef, PxScale, ScaleFont};
+use ab_glyph::{Font as _, FontRef, PxScale, ScaleFont as _};
 use ansi_parser::{AnsiParser, AnsiSequence, Output};
 use colors::{ANSI_MAP, MAP256};
 use font_kit::{family_name::FamilyName, handle::Handle, source::SystemSource};
@@ -86,22 +84,45 @@ fn extract_text(commands: &[Command]) -> String {
 }
 
 #[derive(Debug)]
-pub struct Fonts {
-    pub main: Option<PathBuf>,
+pub struct Font {
+    pub name: Option<String>,
     pub size: f32,
     pub line_height: f32,
 }
 
-pub fn draw_image(input: &str, font_info: Fonts) -> anyhow::Result<ImageBuffer<Rgba<u8>, Vec<u8>>> {
+impl TryFrom<&str> for Font {
+    type Error = anyhow::Error;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        let mut parts = value.split(':');
+        let name = parts.next().map(|s| s.to_string());
+        if name.is_none() {
+            anyhow::bail!("Font name is required");
+        }
+        let size = parts
+            .next()
+            .map(|s| s.parse().unwrap_or(20.0))
+            .unwrap_or(20.0);
+        let line_height = parts
+            .next()
+            .map(|s| s.parse().unwrap_or(1.1))
+            .unwrap_or(1.1);
+
+        Ok(Font {
+            name,
+            size,
+            line_height,
+        })
+    }
+}
+
+pub fn draw_image(input: &str, font_info: Font) -> anyhow::Result<ImageBuffer<Rgba<u8>, Vec<u8>>> {
     let commands = parse_ansi(input);
     let text = extract_text(&commands);
 
     let source = SystemSource::new();
-    let handle = match font_info.main {
-        Some(main) => source.select_best_match(
-            &[FamilyName::Title(main.to_string_lossy().to_string())],
-            &Default::default(),
-        )?,
+    let handle = match font_info.name {
+        Some(main) => source.select_best_match(&[FamilyName::Title(main)], &Default::default())?,
         None => source.select_best_match(&[FamilyName::Monospace], &Default::default())?,
     };
     let font_data = match handle {

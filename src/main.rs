@@ -5,7 +5,7 @@ use std::{
 
 use ansee::{
     cli::{Cli, Commands},
-    draw_image, Fonts,
+    draw_image, Font,
 };
 use clap::Parser;
 use dafont::{get_font_name, FcFontCache, FcPattern, PatternMatch};
@@ -31,8 +31,8 @@ fn main() -> anyhow::Result<()> {
                 Ok(buf)
             })?;
 
-            let fonts = Fonts {
-                main: cli.font,
+            let fonts = Font {
+                name: cli.font,
                 size: cli.font_size.unwrap_or(20.0),
                 line_height: cli.line_height.unwrap_or(1.1),
             };

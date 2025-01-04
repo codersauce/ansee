@@ -117,22 +117,16 @@ ansee = { git = "https://github.com/codersauce/ansee" }
 ### Example
 
 ```rust
-use ansee::{draw_image, Fonts};
-use std::path::PathBuf;
+use ansee::draw_image;
 
 fn main() -> anyhow::Result<()> {
     // Create ANSI-escaped text
     let input = "\x1b[31mHello\x1b[0m \x1b[32mWorld\x1b[0m";
 
-    // Configure fonts
-    let fonts = Fonts {
-        main: Some(PathBuf::from("Fira Code")),
-        size: 20.0,
-        line_height: 1.1,
-    };
-
-    // Generate the image
-    let image = draw_image(input, fonts)?;
+    // Generate the image with the specified system font, you can use a string
+    // with font_name:font_size:line_height and convert it to a Font with
+    // `.try_into` like below
+    let image = draw_image(input, "FantasqueSansM Nerd Font:18".try_into()?)?;
 
     // Save to file
     image.save("output.png")?;
@@ -148,20 +142,26 @@ fn main() -> anyhow::Result<()> {
 ```rust
 pub fn draw_image(
     input: &str,
-    font_info: Fonts
+    font_info: Font
 ) -> anyhow::Result<ImageBuffer<Rgba<u8>, Vec<u8>>>
 ```
 
 Converts ANSI-escaped text to an image. Returns an `ImageBuffer` that can be saved or manipulated further.
 
-#### `Fonts` struct
+#### `Font` struct
 
 ```rust
-pub struct Fonts {
-    pub main: Option<PathBuf>,    // Font path/name (uses system monospace if None)
+pub struct Font {
+    pub name: Option<String>,     // Font name (uses system monospace if None)
     pub size: f32,                // Font size in pixels
     pub line_height: f32,         // Line height as a factor of font size
 }
+```
+
+Or you can convert from a colon delimited `&str`, like `FantasqueSansM:18.0:1.2` and `try_into`:
+
+```rust
+draw_image("\x1b[31mHello\x1b[0m \x1b[32mWorld\x1b[0m", "FantasqueSansM:18.0:1.2".try_into()?);
 ```
 
 The library provides full access to the same functionality as the CLI tool, allowing you to:

@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use clap::{Parser, Subcommand};
 
 /// Render ANSI escaped text to image
@@ -10,15 +8,15 @@ pub struct Cli {
     pub command: Option<Commands>,
 
     /// Input file to render or stdin if not present
-    pub input: Option<PathBuf>,
+    pub input: Option<String>,
 
     /// Output file to write to or stdout if not present
     #[clap(short, long)]
-    pub output: Option<PathBuf>,
+    pub output: Option<String>,
 
     /// Font used for rendering the image
     #[clap(short = 'f', long)]
-    pub font: Option<PathBuf>,
+    pub font: Option<String>,
 
     /// Font size in pixels, defaults to 20.0
     #[clap(short = 's', long)]
