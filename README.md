@@ -28,20 +28,55 @@ cargo install --path .
 
 ## Usage
 
+```bash
+# Convert ANSI text from stdin
+echo -e "\033[31mHello\033[0m \033[32mWorld\033[0m" | ansee -f "Fira Code"
+```
+
+![Basic Example](assets/basic.png)
+
 ### Basic Usage
 
 ```bash
 # Convert ANSI text from a file
 ansee input.txt -o output.png
 
-# Convert ANSI text from stdin
-echo -e "\033[31mHello\033[0m \033[32mWorld\033[0m" | ansee
-
 # Use a specific font
 ansee input.txt -f "Fira Code" -o output.png
 
 # Customize font size and line height
 ansee input.txt -s 24 -e 1.5 -o output.png
+```
+
+### Available Fonts
+
+To know which fonts your system support for the `-f` option, use the `list-fonts` command:
+
+```bash
+> $ ansee list-fonts
+.SF NS Mono
+  .SF NS Mono Light
+  .SF NS Mono Light Italic
+
+(...)
+
+Fira Code
+  Fira Code Bold
+  Fira Code Regular
+
+Fira Code Light
+  Fira Code Light
+
+Fira Code Medium
+  Fira Code Medium
+
+Fira Code Retina
+  Fira Code Retina
+
+Fira Code SemiBold
+  Fira Code SemiBold
+
+(...)
 ```
 
 ### Available Options
@@ -93,17 +128,24 @@ The tool supports the following ANSI escape sequences:
 echo -e "\033[31mRed Text\033[0m \033[42mGreen Background\033[0m" | ansee -o colors.png
 ```
 
+![Basic Text Coloring](assets/colors.png)
+
 ### Using 256 Colors
 
 ```bash
-echo -e "\033[38;5;82mBright Green\033[0m \033[48;5;25mBlue Background\033[0m" | ansee -o 256colors.png
+echo -e "\033[38;5;82mBright Green\033[0m \033[48;5;25mBlue Background\033[0m" \
+    | ansee -f "FantasqueSansM Nerd Font" -o 256colors.png
 ```
+
+![Using 256 Colors](assets/256colors.png)
 
 ### Using RGB Colors
 
 ```bash
-echo -e "\033[38;2;255;128;0mOrange Text\033[0m" | ansee -o rgb.png
+echo -e "\033[38;2;255;128;0mOrange Text\033[0m" | ansee -s 40 -f "Iosevka Heavy" -o rgb.png
 ```
+
+![Using RGB Colors](assets/rgb.png)
 
 ## Library Usage
 
